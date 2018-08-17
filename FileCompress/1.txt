@@ -1,0 +1,338 @@
+#pragma once
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_DEPRECATE  
+#define _CRT_NONSTDC_NO_DEPRECATE//itoa和atoi在该环境下需包含的
+#include<iostream>
+#include<string>
+#include<stdio.h>
+#include<stdlib.h>
+#include<assert.h>
+#include"HuffmanTree.h"
+
+struct CharInfo
+{
+	CharInfo(size_t count = 0)//构造函数，里面的count为出现的次数
+	: _ch(0)
+	, _count(count)
+	, _strcode("")
+	{}
+	bool operator!=(const CharInfo&info)
+	{
+		return _count != info._count;
+	}
+	bool operator==(const CharInfo&info)
+	{
+		return _count == info._count;
+	}
+	CharInfo operator+(const CharInfo&info)//重载+，用次数进行+
+	{
+		CharInfo temp(*this);
+		temp._count += info._count;
+		return temp;
+	}
+	bool operator<(const CharInfo&info)
+	{
+		return _count < info._count;
+	}
+	unsigned char _ch;
+	long long _count;//当前字符出现的次数
+	string _strcode;//当前字符对应的编码
+};
+
+class FileCompress
+{
+public:
+	FileCompress()//初始化
+	{
+		for (size_t i = 0; i < 256; i++)//对于每个字符出现的次数
+		{
+			_charInfo[i]._ch = i;//字符
+			_charInfo[i]._count = 0;//出现的次数
+		}
+	}
+	void GetHuffmanCode(HuffmanTreeNode<CharInfo>*pRoot)//获取每个字符对应的编码
+	{
+		if (pRoot)
+		{
+			GetHuffmanCode(pRoot->_pLeft);//左子树
+			GetHuffmanCode(pRoot->_pRight);//右子树
+			if (pRoot->_pLeft == NULL&&pRoot->_pRight == NULL)//pRoot现在在叶子节点的位置
+			{
+				HuffmanTreeNode<CharInfo>*pCur = pRoot;
+				HuffmanTreeNode<CharInfo>*pParent = pCur->_pParent;//叶子节点的双亲
+				string& strCode = _charInfo[pCur->_weight._ch]._strcode;//Weight为CharInfo,则pcur指向的字符元素用pcur->_weight->_ch表示，在获取字符编码//创建哈夫曼编码
+
+				while (pParent)
+				{
+					//string& strCode = _charInfo[pCur->_weight._ch]._strcode;//Weight为CharInfo,则pcur指向的字符元素用pcur->_weight->_ch表示，在获取字符编码
+					if (pCur == pParent->_pLeft)
+					{
+						strCode += '0';
+					}
+					else if (pCur == pParent->_pRight)
+					{
+						strCode += '1';
+					}
+					pCur = pParent;
+					pParent = pCur->_pParent;
+				}
+				reverse(strCode.begin(), strCode.end());
+			}
+		}
+	}
+	void CompressFile(const string&filepath)//压缩文件  //参数为文件的名字
+	{
+		//1.读取原文件，统计每个字符出现的次数
+		FILE*fp = fopen(filepath.c_str(), "r");//因为open的第一个参数是char*类型，则需要将string类进行转化。
+		if (fp == NULL)
+		{
+			cout << "打开文件失败" << endl;
+			return;
+		}
+		unsigned char*pReadBuff = new unsigned char[1024];
+		while (1)
+		{
+			size_t readsize = fread(pReadBuff, 1, 1024, fp);//返回的是读取的个数
+			if (readsize == 0)//若读取到文件的结尾，就让其跳出
+			{
+				break;
+			}
+			for (size_t i = 0; i < readsize; i++)
+			{
+				_charInfo[pReadBuff[i]]._count++;//读取的文件放入到pReadbuff中，则内容是pReadBuff[i]
+			}
+		}
+		//2.以每个字符出现的次数为权值创建Huffman树
+		HuffmanTree<CharInfo>Ht(_charInfo, 256, CharInfo(0));//若出现0次则表示为无效值，第三个参数表示无效值
+		//3.根据HUffman树获取Huffman编码
+		GetHuffmanCode(Ht.GetRoot());
+		//写压缩文件的头部信息
+		string filePostFix = GetFilePostGetPostfixFileName(filepath);//获取文件的后缀
+		//获取编码的信息
+		string strCodeInfo;
+		char strCount[32] = { 0 };//保存十进制转换下来的信息即字符3
+		size_t LineCount = 0;//有效字符的行数
+		for (size_t i = 0; i < 256; i++)
+		{
+			if (_charInfo[i]._count != 0)
+			{
+				//不等于0时，将字符的信息保存
+				//下面两行保存的形式如：A，1的形式
+				strCodeInfo += _charInfo[i]._ch;//
+				strCodeInfo += ',';
+				itoa(_charInfo[i]._count, strCount, 10);//第二个参数是字符数组
+				strCodeInfo += strCount;
+				strCodeInfo += '\n';
+				LineCount++;
+			}
+		}
+		string strHeadInfo;//头部信息
+		//将上面解析到的东西写道头部信息中来
+		strHeadInfo += filePostFix;
+		strHeadInfo += '\n';
+		itoa(LineCount, strCount, 10);
+		strHeadInfo += strCount;
+		strHeadInfo += '\n';
+		strHeadInfo += strCodeInfo;
+		//4.用每个字符的编码重新改写原文件
+		//先要创建一个新的文件，来放压缩的文件
+		unsigned char*pWriteBuff = new  unsigned char[1024];//写入缓冲区
+		char pos = 0;
+		char c = 0;
+		size_t writeSize = 0;//写的大小
+		//设置文件指针。
+		fseek(fp, 0, SEEK_SET);//重置到文件起始的位置。
+		//string compressFilePath = GetFilePath(filepath);//获取了文件的路径
+		//compressFilePath += ".huf";//加上后面的成为了文件名
+		FILE*fOut = fopen("1.huf", "w");
+		assert(fOut);
+		//写压缩编码的信息
+		fwrite(strHeadInfo.c_str(), 1, strHeadInfo.length(), fOut);
+		while (1)
+		{
+			size_t readsize = fread(pReadBuff, 1, 1024, fp);//读原文件
+			if (readsize == 0)
+			{
+				break;
+			}
+			for (size_t i = 0; i < readsize; i++)
+			{
+				string&strCode = _charInfo[pReadBuff[i]]._strcode;//编码
+				for (int j = 0; j < strCode.size(); j++)
+				{
+					c <<= 1;//向左移位
+					pos++;//移到满的标记
+					if (strCode[j] == '1')//	//字符0不用管，因为c本身就为0，放进去
+					{
+						c |= 1;
+					}
+					if (pos == 8)
+					{
+						pWriteBuff[writeSize++] = c;
+						if (1024 == writeSize)
+						{
+							fwrite(pWriteBuff, 1, 1024, fOut);//写入fOut文件
+							writeSize = 0;
+						}
+						pos = 0;
+					}
+				}
+			}
+		}
+		//pos可能小于8
+		if (pos < 8)
+		{
+			pWriteBuff[writeSize++] = (c << (8 - pos));
+		}
+		fwrite(pWriteBuff, 1, writeSize, fOut);
+		fclose(fp);
+		fclose(fOut);
+		delete[]pReadBuff;
+		delete[]pWriteBuff;
+	}
+	string GetFilePostGetPostfixFileName(string FilePath)//获取文件后缀
+	{
+		size_t pos = FilePath.find_last_of('.');
+		return FilePath.substr(pos);
+	}
+	//解压缩
+	void UnCompressFile(const string& filePath)
+	{
+		//string strPost = filePath.substr(filePath.find_last_of('.'));//获得了文件的后缀名
+		//if (strPost.compare(".huf") != 0)
+		//{
+		//	cout << "无法解压此类文件" << endl;
+		//	return;
+		//}
+	//	FILE* fIn = fopen(filePath.c_str(), "r");
+		FILE* fIn = fopen(filePath.c_str(), "r");
+		assert(fIn);
+		//一行一行读取数据
+		string strFilePostFix;//文件的后缀.txt
+		ReadLine(fIn, strFilePostFix);
+		//读取行号
+		string strLineCount;//保存行号 4
+		ReadLine(fIn, strLineCount);//
+		////读取下面的四行中的信息
+		//A,1
+		//B, 3
+		//C, 5
+		//D, 7
+		size_t LineCount = atoi(strLineCount.c_str());
+		LineCount <<= 32;
+		string strCodeInfo;
+		for (size_t i = 0; i < LineCount; i++)
+		{
+			strCodeInfo = "";//再将其置为空
+			ReadLine(fIn, strCodeInfo);//将读到的信息放到strCodeInfo中。//读到的是A、B、C、D
+			_charInfo[strCodeInfo[0]]._count = atoi(strCodeInfo.c_str() + 2);//从每一行中拿到字符的个数的信息。//strCodeInfo[0]就是前面的A、B、C、D
+			//+2的原因是前面还有一个","。
+		}
+		//还原Huffman树
+		HuffmanTree<CharInfo>ht(_charInfo, 256, CharInfo(0));//重新建树
+
+		//解压缩，读取压缩信息
+		HuffmanTreeNode<CharInfo>* pRoot = ht.GetRoot();
+		HuffmanTreeNode<CharInfo>* pCur = pRoot;
+		string compressFilePath = GetFilePath(filePath);//获取了文件的路径
+//		compressFilePath += strFilePostFix;
+			compressFilePath += ".uncompress";//加上后面的成为了文件名
+		FILE* fOut = fopen(compressFilePath.c_str(), "w");
+		assert(fOut);
+		unsigned char*pReadBuff = new unsigned char[1024];
+		size_t pos = 8;
+		unsigned char*pWriteBuff = new 	unsigned char[1024];
+		size_t writesize = 0;
+		int readsize = 0;
+		size_t fileSize = pCur->_weight._count;//源文件的总大小
+		while (1)
+		{
+			int  readsize = fread(pReadBuff, 1, 1024, fIn);
+			if (readsize ==0)
+			{
+				break;
+			}
+			for (size_t i = 0; i < readsize; i++)
+			{
+				pos = 8;
+
+				while (pos--)
+				{
+					if (pReadBuff[i] & (1 << pos))//说明当前的bit位为1
+					{
+						pCur = pCur->_pRight;
+					}
+					else
+					{
+						pCur = pCur->_pLeft;
+					}
+					if (pCur == NULL)
+					{
+						return;
+					}
+					if ((pCur->_pLeft == NULL) && (pCur->_pRight == NULL))//叶子的位置
+					{
+						pWriteBuff[writesize++] = pCur->_weight._ch;
+						if (writesize == 1024)
+						{
+							fwrite(pWriteBuff, 1, 1024, fOut);//将其写到pWriteBuff中
+							writesize = 0;
+						}
+						/*if ((--fileSize) == 0&& writesize < 1024 && writesize > 0)
+						{
+						fwrite(pWriteBuff, 1, writesize, fOut);
+						break;
+						}*/
+						--fileSize;
+						//可能存在已经读取完了，
+						if (0 == fileSize && (writesize < 1024) && (writesize > 0))
+						{
+							fwrite(pWriteBuff, 1, writesize, fOut);
+							break;
+						}
+						//在让其从头部的位置开始
+						pCur = ht.GetRoot();
+					}
+				}
+			}
+		}
+		delete[]pReadBuff;
+		delete[]pWriteBuff;
+		fclose(fIn);
+		fclose(fOut);
+	}
+	string GetFilePath(string FilePath)//获取文件路径
+	{
+		size_t pos = FilePath.find_last_of('.');
+		return FilePath.substr(0, pos);//表示从.之前的都要找到
+	}
+private:
+	CharInfo _charInfo[256];//因为文件中可能含有字母，汉字等
+	void ReadLine(FILE*fIn, string&strInfo)//一行一行读取数据
+	{
+		char c = fgetc(fIn);
+		if (c == EOF)//如果到达文件结尾
+		{
+			return;
+		}
+		while (c != '\n')
+		{
+			strInfo += c;
+			c = fgetc(fIn);
+			if (EOF == c)
+			{
+				return;
+			}
+		}
+
+	}
+};
+
+void TestFileCompress()
+{
+	FileCompress fc;
+//fc.CompressFile("1.txt");
+	//fc.CompressFile("putian.PNG");
+	//fc.UnCompressFile("1.huf");
+	fc.UnCompressFile("1.huf");
+}
