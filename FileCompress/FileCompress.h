@@ -6,33 +6,33 @@
 #include<windows.h>  
 #include<string.h>  
 using namespace std;
-typedef long long Longtype;//ÎªÁËÀ©´óÆä·¶Î§£¬intĞÍÄÜ´¦ÀíµÄ·¶Î§ÒÑ¾­²»ÄÜÂú×ã£¬ËùÒÔ¶¨ÒåLong LongĞÍÓèÒÔ±íÊ¾  
+typedef long long Longtype;//ä¸ºäº†æ‰©å¤§å…¶èŒƒå›´ï¼Œintå‹èƒ½å¤„ç†çš„èŒƒå›´å·²ç»ä¸èƒ½æ»¡è¶³ï¼Œæ‰€ä»¥å®šä¹‰Long Longå‹äºˆä»¥è¡¨ç¤º  
 
 struct CharInfo
 {
-	unsigned char _ch;//ÕâÀï±ØĞëÎªunsigned£¬·ñÔò»áÔì³É½Ø¶Ï£¬ËùÒÔ´Ó-128~127µ÷ÖÁ0~255.  
+	unsigned char _ch;//å¿…é¡»ä¸ºunsignedï¼Œå¦åˆ™ä¼šé€ æˆæˆªæ–­ï¼Œæ‰€ä»¥ä»-128~127è°ƒè‡³0~255.  
 	Longtype _count;
 	string _code;
 
 	CharInfo(int count = 0)
 		:_ch(0)
 		, _count(count)
-		, _code("")
+		, _code(" ")
 	{}
 
-	CharInfo operator+(CharInfo& file)//ÖØÔØ+
+	CharInfo operator+(CharInfo& file)//é‡è½½+
 	{
 		CharInfo tmp;
 		tmp._count = _count + file._count;
 		return tmp;
 	}
 
-	bool operator < (CharInfo& file) const//ÖØÔØ<
+	bool operator < (CharInfo& file) const//é‡è½½<
 	{
 		return _count < file._count;
 	}
 
-	bool operator != (const CharInfo& file) const//ÖØÔØ£¡=
+	bool operator != (const CharInfo& file) const//é‡è½½ï¼=
 	{
 		return _count != file._count;
 	}
@@ -45,21 +45,20 @@ class FileCompress
 public:
 	FileCompress()
 	{
-		for (int i = 0; i < 256; ++i)//³õÊ¼»¯
+		for (int i = 0; i < 256; ++i)//åˆå§‹åŒ–
 		{
 			_infos[i]._ch = i;
 		}
 	}
 	bool Compress(const char* filename)
 	{
-		//1.´ò¿ªÎÄ¼ş£¬Í³¼ÆÎÄ¼ş×Ö·û³öÏÖµÄ´ÎÊı    
+		//1.æ‰“å¼€æ–‡ä»¶ï¼Œç»Ÿè®¡æ–‡ä»¶å­—ç¬¦å‡ºç°çš„æ¬¡æ•°    
 		Longtype Charcount = 0;
 		assert(filename);
-		FILE* fOut = fopen(filename, "rb");//Ö®Ç°ÓÃ¡°r¡±,½á¹û³öÁËÒ»µãÎÊÌâ
-		//"rb"ÎªÒÔ¶ş½øÖÆ·½Ê½¶ÁÈ¡ÎÄ¼ş£¬ÕâÀïµÄb¾ÍÊÇbinary¡£"wb"ÎªÒÔ¶ş½øÖÆ·½Ê½Ğ´ÈëÎÄ¼ş  
-		assert(fOut);					//ÒÔ¶ş½øÖÆºÍÎÄ±¾´ò¿ª·½Ê½Çø±ğÔÚÓÚ£ºÒÔÎÄ±¾´ò¿ª·½Ê½»á½«\r\n
-		//×ª»»Îª\n,¶ş½øÖÆÕâ²»»áÓĞÕâÑùµÄ×ª»»
-		//char ch = fgetc(fOut);
+		FILE* fOut = fopen(filename, "rb");//ä¹‹å‰ç”¨â€œrâ€,ç»“æœå‡ºäº†ä¸€ç‚¹é—®é¢˜
+		//"rb"ä¸ºä»¥äºŒè¿›åˆ¶æ–¹å¼è¯»å–æ–‡ä»¶ï¼Œ"wb"ä¸ºä»¥äºŒè¿›åˆ¶æ–¹å¼å†™å…¥æ–‡ä»¶  
+		assert(fOut);					//ä»¥äºŒè¿›åˆ¶å’Œæ–‡æœ¬æ‰“å¼€æ–¹å¼åŒºåˆ«åœ¨äºï¼šä»¥æ–‡æœ¬æ‰“å¼€æ–¹å¼ä¼šå°†\r\n
+		//è½¬æ¢ä¸º\n,äºŒè¿›åˆ¶è¿™ä¸ä¼šæœ‰è¿™æ ·çš„è½¬æ¢
 		int ch = fgetc(fOut);
 		while (ch != EOF) 
 		{
@@ -67,14 +66,14 @@ public:
 			ch = fgetc(fOut);
 			Charcount++;
 		}
-		//2.Éú³É¶ÔÓ¦µÄhuffman±àÂë    
+		//2.ç”Ÿæˆå¯¹åº”çš„huffmanç¼–ç     
 		GenerateHuffmanCode();
-		//3.ÎÄ¼şÑ¹Ëõ    
+		//3.æ–‡ä»¶å‹ç¼©    
 		string compressFile = filename;
 		compressFile += ".compress";
-		FILE* fwCompress = fopen(compressFile.c_str(), "wb");//ÒÔ¶ş½øÖÆĞ´Èë
+		FILE* fwCompress = fopen(compressFile.c_str(), "wb");//ä»¥äºŒè¿›åˆ¶å†™å…¥
 		assert(fwCompress);
-		fseek(fOut, 0, SEEK_SET);//ÖØÖÃµ½ÎÄ¼şÆğÊ¼µÄÎ»ÖÃ
+		fseek(fOut, 0, SEEK_SET);//é‡ç½®åˆ°æ–‡ä»¶èµ·å§‹çš„ä½ç½®
 		ch = fgetc(fOut);
 		char inch = 0;
 		int pos = 0;
@@ -83,12 +82,12 @@ public:
 			string& code = _infos[(unsigned char)ch]._code;
 			for (size_t i = 0; i < code.size(); ++i)
 			{
-				inch = inch << 1;//Ïò×óÒÆÎ»
+				inch = inch << 1;//å‘å·¦ç§»ä½
 				if (code[i] == '1')
 				{
 					inch |= 1;
 				}
-				if (++pos == 8)//¶ÔÓÚĞÎ³ÉµÄ³¤´®×Ö·û±àÂëµÄÇĞ¸î£¬Ã¿8¸öbitÎªÒ»¸ö×Ö½Ú£¬±ãÓÚ¶ÁÈ¡  
+				if (++pos == 8)//å¯¹äºå½¢æˆçš„é•¿ä¸²å­—ç¬¦ç¼–ç çš„åˆ‡å‰²ï¼Œæ¯8ä¸ªbitä¸ºä¸€ä¸ªå­—èŠ‚ï¼Œä¾¿äºè¯»å–  
 				{
 					fputc(inch, fwCompress);
 					inch = 0;
@@ -98,12 +97,12 @@ public:
 			ch = fgetc(fOut);
 		}
 
-		if (pos)//¿¼ÂÇµ½¿ÉÄÜ»áÓĞÇĞ¸îÍê£¬Ê£ÓàµÄ×Ö·ûÂë²»¹»Ìî³ä8¸öbitÎ»µÄÇé¿ö  
+		if (pos)//è€ƒè™‘åˆ°å¯èƒ½ä¼šæœ‰åˆ‡å‰²å®Œï¼Œå‰©ä½™çš„å­—ç¬¦ç ä¸å¤Ÿå¡«å……8ä¸ªbitä½çš„æƒ…å†µ  
 		{
 			inch = inch << (8 - pos);
 			fputc(inch, fwCompress);
 		}
-		//4.ÅäÖÃÎÄ¼ş£¬·½±ãºóĞøµÄ½âÑ¹Ëõ£»  
+		//4.é…ç½®æ–‡ä»¶ï¼Œæ–¹ä¾¿åç»­çš„è§£å‹ç¼©ï¼›  å°†å…¶å­—ç¬¦çš„ä¸ªæ•°ç­‰ä¿¡æ¯å­˜åˆ°é…ç½®æ–‡ä»¶ä¸­
 		string configFile = filename;
 		configFile += ".config";
 		FILE *fconfig = fopen(configFile.c_str(), "wb");
@@ -143,7 +142,7 @@ public:
 
 		return true;
 	}
-	//ÎÄ¼şµÄ½âÑ¹Ëõ 
+	//æ–‡ä»¶çš„è§£å‹ç¼© 
 	bool UnCompresss(const char* filename)
 	{
 		string configfile = filename;
@@ -162,8 +161,8 @@ public:
 		line.clear();
 
 		while (feof(outConfig))
-			//feof()Óöµ½ÎÄ¼ş½áÊø£¬º¯ÊıÖµÎª·ÇÁãÖµ£¬·ñÔòÎª0¡£µ±°ÑÊı¾İÒÔ¶ş½øÖÆµÄĞÎÊ½½øĞĞ´æ·ÅÊ±£¬¿ÉÄÜ»áÓĞ-1ÖµµÄ³öÏÖ£¬
-			//ËùÒÔ´ËÊ±ÎŞ·¨ÀûÓÃ-1Öµ£¨EOF£©×öÎªeof()º¯ÊıÅĞ¶Ï¶ş½øÖÆÎÄ¼ş½áÊøµÄ±êÖ¾¡£  
+			//feof()é‡åˆ°æ–‡ä»¶ç»“æŸï¼Œå‡½æ•°å€¼ä¸ºéé›¶å€¼ï¼Œå¦åˆ™ä¸º0ã€‚å½“æŠŠæ•°æ®ä»¥äºŒè¿›åˆ¶çš„å½¢å¼è¿›è¡Œå­˜æ”¾æ—¶ï¼Œå¯èƒ½ä¼šæœ‰-1å€¼çš„å‡ºç°ï¼Œ
+			//æ‰€ä»¥æ­¤æ—¶æ— æ³•åˆ©ç”¨-1å€¼ï¼ˆEOFï¼‰åšä¸ºeof()å‡½æ•°åˆ¤æ–­äºŒè¿›åˆ¶æ–‡ä»¶ç»“æŸçš„æ ‡å¿—ã€‚  
 		{
 			line = ReadLine(outConfig);
 			if (!line.empty())
@@ -180,7 +179,7 @@ public:
 		}
 
 		HuffmanTree<CharInfo> ht;
-		ht.CreatTree(_infos, 256, CharInfo(0));//ÖØĞÂ½¨Ê÷
+		ht.CreatTree(_infos, 256, CharInfo(0));//é‡æ–°å»ºæ ‘
 		HuffmanTreeNode<CharInfo>* root = ht.GetRootNode();
 		string  UnCompressFile = filename;
 		UnCompressFile += ".uncompress";
@@ -257,7 +256,7 @@ protected:
 		_GenerateHuffmanCode(hft.GetRootNode());
 	}
 protected:
-	void _GenerateHuffmanCode(HuffmanTreeNode<CharInfo>* root)//´´½¨¹ş·òÂü±àÂë
+	void _GenerateHuffmanCode(HuffmanTreeNode<CharInfo>* root)//åˆ›å»ºå“ˆå¤«æ›¼ç¼–ç 
 	{
 		if (root == NULL)
 		{
@@ -275,24 +274,24 @@ protected:
 
 			while (parent)
 			{
-				if (parent->_left == cur)//Íù×ó×ß+0
+				if (parent->_left == cur)//å¾€å·¦èµ°+0
 				{
 					code += '0';
 				}
-				else if (parent->_right == cur)//ÍùÓÒ×ß+1
+				else if (parent->_right == cur)//å¾€å³èµ°+1
 				{
 					code += '1';
 				}
 				cur = parent;
 				parent = cur->_parent;
 			}
-			//Ñ°ÕÒ±àÂë´ÓÒ¶×Ó½Úµã¿ªÊ¼¡£
+			//å¯»æ‰¾ç¼–ç ä»å¶å­èŠ‚ç‚¹å¼€å§‹ã€‚
 			reverse(code.begin(), code.end());
 		}
 	}
 
-	//µİ¹éÊµÏÖ¹ş·òÂü±àÂë
-	void _GenerateHuffmanCode_R(HuffmanTreeNode<CharInfo>* root, string code)//´´½¨¹ş·òÂü±àÂë
+	//é€’å½’å®ç°å“ˆå¤«æ›¼ç¼–ç 
+	void _GenerateHuffmanCode_R(HuffmanTreeNode<CharInfo>* root, string code)//åˆ›å»ºå“ˆå¤«æ›¼ç¼–ç 
 	{
 		if (root == NULL)
 			return;
@@ -309,178 +308,38 @@ private:
 
 void TestFileCompress()
 {
-	cout << "Ò»´ÎÑ¹Ëõ" << endl;
+	cout << "ä¸€æ¬¡å‹ç¼©" << endl;
 	FileCompress<CharInfo> fc;
-	cout << "Input.txtÎÄ¼şÑ¹ËõÖĞ...." << endl;
-	cout << "Ñ¹ËõÓÃÊ±£º ";
-	int begin1 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
+	cout << "Input.txtæ–‡ä»¶å‹ç¼©ä¸­...." << endl;
+	cout << "å‹ç¼©ç”¨æ—¶ï¼š ";
+	int begin1 = GetTickCount();//è®°å½•å¼€å§‹æ—¶é—´
 	fc.Compress("1.txt");//  
-	int end1 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-	cout << end1 - begin1 << endl << endl;//Ñ¹ËõÊ±¼ä
+	int end1 = GetTickCount();//  è®°å½•ç»“æŸæ—¶é—´
+	cout << end1 - begin1 << endl << endl;//å‹ç¼©æ—¶é—´
 
-	cout << "Input.txtÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-	cout << "½âÑ¹ÓÃÊ±£º ";
+	cout << "Input.txtæ–‡ä»¶è§£å‹ä¸­...." << endl;;
+	cout << "è§£å‹ç”¨æ—¶ï¼š ";
 	int begin2 = GetTickCount();
 	fc.UnCompresss("1.txt");
 	int end2 = GetTickCount();
-	cout << end2 - begin2 << endl << endl;//½âÑ¹ÓÃÊ±
+	cout << end2 - begin2 << endl << endl;//è§£å‹ç”¨æ—¶
 
-	//FileCompress<CharInfo> fc1;
-
-	//cout << "Input.BIGÎÄ¼şÑ¹ËõÖĞ...." << endl;
-	//cout << "Ñ¹ËõÓÃÊ±£º ";
-	//int begin3 = GetTickCount();
-	//fc1.Compress("Input.BIG");//  
-	//int end3 = GetTickCount();//  
-	//cout << end3 - begin3 << endl << endl;
-
-	//cout << "Input.BIGÎÄ¼ş½âÑ¹ÖĞ...." << endl;
-	//cout << "½âÑ¹ÓÃÊ±£º ";
-	//int begin4 = GetTickCount();
-	//fc1.UnCompresss("Input.BIG");
-	//int end4 = GetTickCount();
-	//cout << (end4 - begin4) << endl;
-
-	//FileCompress<CharInfo> fc2;
-	//cout << "¿µÎõ×Öµä.txtÎÄ¼şÑ¹ËõÖĞ...." << endl;
-	//cout << "Ñ¹ËõÓÃÊ±£º ";
-	//int begin5 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-	//fc2.Compress("¿µÎõ×Öµä.txt");//  
-	//int end5 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-	//cout << end5 - begin5 << endl << endl;//Ñ¹ËõÊ±¼ä
-
-	//cout << "¿µÎõ×Öµä.txtÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-	//cout << "½âÑ¹ÓÃÊ±£º ";
-	//int begin6 = GetTickCount();
-	//fc2.UnCompresss("¿µÎõ×Öµä.txt");
-	//int end6 = GetTickCount();
-	//cout << end6 - begin6 << endl << endl;//½âÑ¹ÓÃÊ±
-}
-//void TestFileCompressAgain()//¶ş´ÎÑ¹Ëõ
-//{
-//	cout << "¶ş´ÎÑ¹Ëõ" << endl;
-//	FileCompress<CharInfo> fc;
-//	cout << "Input.txt.compressÎÄ¼şÑ¹ËõÖĞ...." << endl;
-//	cout << "Ñ¹ËõÓÃÊ±£º ";
-//	int begin1 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-//	fc.Compress("Input.txt.compress");//  
-//	int end1 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-//	cout << end1 - begin1 << endl << endl;//Ñ¹ËõÊ±¼ä
-//
-//	cout << "Input.txt.compressÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-//	cout << "½âÑ¹ÓÃÊ±£º ";
-//	int begin2 = GetTickCount();
-//	fc.UnCompresss("Input.txt.compress");
-//	int end2 = GetTickCount();
-//	cout << end2 - begin2 << endl << endl;//½âÑ¹ÓÃÊ±
-//
-//	FileCompress<CharInfo> fc1;
-//	cout << "Input.BIG.compressÎÄ¼şÑ¹ËõÖĞ...." << endl;
-//	cout << "Ñ¹ËõÓÃÊ±£º ";
-//	int begin3 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-//	fc1.Compress("Input.BIG.compress");//  
-//	int end3 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-//	cout << end3 - begin3 << endl << endl;//Ñ¹ËõÊ±¼ä
-//
-//	cout << "Input.BIG.compressÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-//	cout << "½âÑ¹ÓÃÊ±£º ";
-//	int begin4 = GetTickCount();
-//	fc1.UnCompresss("Input.BIG.compress");
-//	int end4 = GetTickCount();
-//	cout << end4 - begin4 << endl << endl;//½âÑ¹ÓÃÊ±
-//
-//
-//
-//}
-//void TestFileCompressThree()
-//{
-//	cout << "Èı´ÎÑ¹Ëõ" << endl;
-//	FileCompress<CharInfo> fc;
-//	cout << "Input.BIG.compress.compressÎÄ¼şÑ¹ËõÖĞ...." << endl;
-//	cout << "Ñ¹ËõÓÃÊ±£º ";
-//	int begin5 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-//	fc.Compress("Input.BIG.compress.compress");//  
-//	int end5 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-//	cout << end5 - begin5 << endl << endl;//Ñ¹ËõÊ±¼ä
-//
-//	cout << "Input.BIG.compress.compressÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-//	cout << "½âÑ¹ÓÃÊ±£º ";
-//	int begin6 = GetTickCount();
-//	fc.UnCompresss("Input.BIG.compress.compress");
-//	int end6 = GetTickCount();
-//	cout << end6 - begin6 << endl << endl;//½âÑ¹ÓÃÊ±
-//}
-//
-//void TestFileCompressFour()
-//{
-//	cout << "ËÄ´ÎÑ¹Ëõ" << endl;
-//	FileCompress<CharInfo> fc;
-//	cout << "Input.BIG.compress.compress.compressÎÄ¼şÑ¹ËõÖĞ...." << endl;
-//	cout << "Ñ¹ËõÓÃÊ±£º ";
-//	int begin5 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-//	fc.Compress("Input.BIG.compress.compress.compress");//  
-//	int end5 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-//	cout << end5 - begin5 << endl << endl;//Ñ¹ËõÊ±¼ä
-//
-//	cout << "Input.BIG.compress.compress.compressÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-//	cout << "½âÑ¹ÓÃÊ±£º ";
-//	int begin6 = GetTickCount();
-//	fc.UnCompresss("Input.BIG.compress.compress.compress");
-//	int end6 = GetTickCount();
-//	cout << end6 - begin6 << endl << endl;//½âÑ¹ÓÃÊ±
-//}
-//void TestFileCompressFive()
-//{
-//	cout << "Îå´ÎÑ¹Ëõ" << endl;
-//	FileCompress<CharInfo> fc;
-//	cout << "Input.BIG.compress.compress.compress.compressÎÄ¼şÑ¹ËõÖĞ...." << endl;
-//	cout << "Ñ¹ËõÓÃÊ±£º ";
-//	int begin5 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-//	fc.Compress("Input.BIG.compress.compress.compress.compress");//  
-//	int end5 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-//	cout << end5 - begin5 << endl << endl;//Ñ¹ËõÊ±¼ä
-//
-//	cout << "Input.BIG.compress.compress.compress.compressÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-//	cout << "½âÑ¹ÓÃÊ±£º ";
-//	int begin6 = GetTickCount();
-//	fc.UnCompresss("Input.BIG.compress.compress.compress.compress");
-//	int end6 = GetTickCount();
-//	cout << end6 - begin6 << endl << endl;//½âÑ¹ÓÃÊ±
-//}
 void TestFileCompressPhoto()
 {
-	cout << "Í¼Æ¬Ñ¹Ëõ" << endl;
+	cout << "å›¾ç‰‡å‹ç¼©" << endl;
 	FileCompress<CharInfo> fc;
-	cout << "²¶×½.PNGÎÄ¼şÑ¹ËõÖĞ...." << endl;
-	cout << "Ñ¹ËõÓÃÊ±£º ";
-	int begin5 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-	fc.Compress("²¶»ñ.PNG");//  
-	int end5 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-	cout << end5 - begin5 << endl << endl;//Ñ¹ËõÊ±¼ä
+	cout << "æ•æ‰.PNGæ–‡ä»¶å‹ç¼©ä¸­...." << endl;
+	cout << "å‹ç¼©ç”¨æ—¶ï¼š ";
+	int begin5 = GetTickCount();//è®°å½•å¼€å§‹æ—¶é—´
+	fc.Compress("æ•è·.PNG");//  
+	int end5 = GetTickCount();//  è®°å½•ç»“æŸæ—¶é—´
+	cout << end5 - begin5 << endl << endl;//å‹ç¼©æ—¶é—´
 
-	cout << "166.jpgÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-	cout << "½âÑ¹ÓÃÊ±£º ";
+	cout << "166.jpgæ–‡ä»¶è§£å‹ä¸­...." << endl;;
+	cout << "è§£å‹ç”¨æ—¶ï¼š ";
 	int begin6 = GetTickCount();
-	fc.UnCompresss("²¶»ñ.PNG");
+	fc.UnCompresss("æ•è·.PNG");
 	int end6 = GetTickCount();
-	cout << end6 - begin6 << endl << endl;//½âÑ¹ÓÃÊ±
+	cout << end6 - begin6 << endl << endl;//è§£å‹ç”¨æ—¶
 
 }
-//void TestFileCompressVadio()
-//{
-//	cout << "ÊÓÆµÑ¹Ëõ" << endl;
-//	FileCompress<CharInfo> fc;
-//	cout << "¸ªÉ½ĞĞ_hd.mp4ÎÄ¼şÑ¹ËõÖĞ...." << endl;
-//	cout << "Ñ¹ËõÓÃÊ±£º ";
-//	int begin5 = GetTickCount();//¼ÇÂ¼¿ªÊ¼Ê±¼ä
-//	fc.Compress("¸ªÉ½ĞĞ_hd.mp4");//  
-//	int end5 = GetTickCount();//  ¼ÇÂ¼½áÊøÊ±¼ä
-//	cout << end5 - begin5 << endl << endl;//Ñ¹ËõÊ±¼ä
-//
-//	cout << "¸ªÉ½ĞĞ_hd.mp4ÎÄ¼ş½âÑ¹ÖĞ...." << endl;;
-//	cout << "½âÑ¹ÓÃÊ±£º ";
-//	int begin6 = GetTickCount();
-//	fc.UnCompresss("¸ªÉ½ĞĞ_hd.mp4");
-//	int end6 = GetTickCount();
-//	cout << end6 - begin6 << endl << endl;//½âÑ¹ÓÃÊ±
-//}
