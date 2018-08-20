@@ -1,8 +1,7 @@
 #pragma once    
 #include <vector>    
 #include<assert.h>    
-using namespace std;
-// Ð¡¶Ñ    
+using namespace std;  
 template<class T>
 struct Less
 {
@@ -11,7 +10,7 @@ struct Less
 		return l < r;
 	}
 };
-//´ó¶Ñ
+//Â´Ã³Â¶Ã‘
 template<class T>
 struct Greater
 {
@@ -35,7 +34,7 @@ public:
 			_infosays.push_back(a[i]);
 		}
 
-		// ½¨¶Ñ    
+		// Â½Â¨Â¶Ã‘    
 		for (int i = (_infosays.size() - 2) / 2; i >= 0; --i)
 		{
 			AdjustDown(i);
