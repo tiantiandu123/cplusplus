@@ -78,18 +78,6 @@ public:
 	{
 		return _root;
 	}
-
-
-	//void Destory(Node* root)
-	//{
-	//	if (root)
-	//	{
-	//		Destory(root->_left);
-	//		Destory(root->_right);
-	//		delete root;
-	//		root = NULL;
-	//	}
-	//}
 	void Destory(Node* root)
 	{
 		if (root == NULL)
